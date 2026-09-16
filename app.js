@@ -1,5 +1,5 @@
 // GANTI dengan URL Web App hasil deploy Google Apps Script
-const API_URL = "https://script.google.com/macros/s/GANTI_DENGAN_ID_DEPLOYMENT/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbyakJbsq4ZjcaAJbfwRssAg9opKzVpXT3e8MPzKhhU2E_sWyycPmF4EifRrv9hcV4ck/exec";
 
 let currentUser = null;
 let currentToken = null;
