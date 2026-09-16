@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Pondok Pesantren - Portal</title>
+<link rel="stylesheet" href="style.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.44.0/iconfont/tabler-icons.min.css" />
+</head>
+<body>
+
+  <!-- ===== LOGIN ===== -->
+  <div id="view-login" class="app-shell">
+    <div class="header"><div><p class="label">Masuk</p><p class="title">Portal Ma'had Sabilul Muttaqin</p></div></div>
+    <div class="card">
+      <label style="font-size:13px;">Username</label>
+      <div style="margin:6px 0 12px;"><input id="login-username" placeholder="Username" /></div>
+      <label style="font-size:13px;">Password</label>
+      <div style="position:relative; margin:6px 0 6px;">
+        <input id="login-password" type="password" placeholder="Password" style="padding-right:36px;" />
+        <i class="ti ti-eye" id="toggle-password-icon" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); font-size:16px; color:var(--abu-teks); cursor:pointer;" onclick="togglePasswordVisibility()"></i>
+      </div>
+      <p style="text-align:right; margin:0 0 12px;"><a href="javascript:void(0)" onclick="lupaSandi()" style="font-size:12px; color:var(--hijau-tua);">Lupa sandi?</a></p>
+      <button class="btn primary" style="width:100%; padding:10px;" onclick="doLogin()">Masuk</button>
+      <p id="login-error" style="color:var(--merah); font-size:12px; margin-top:8px;"></p>
+    </div>
+    <div style="padding:16px;">
+      <button class="btn outline" style="width:100%; padding:10px;" onclick="openLoginScan()"><i class="ti ti-qrcode"></i> Scan QR santri (khusus wali)</button>
+      <p style="text-align:center; font-size:11px; color:var(--abu-teks); margin-top:8px;">Wali santri bisa langsung masuk ke portal wali dengan scan QR kartu anaknya, tanpa perlu username/password.</p>
+    </div>
+  </div>
+
+  <!-- ===== SCAN LOGIN WALI ===== -->
+  <div id="view-login-scan" class="app-shell hidden">
+    <div class="header"><i class="ti ti-arrow-left back-btn" onclick="backFromLoginScan()"></i>
+      <div><p class="label">Masuk sebagai wali</p><p class="title">Scan QR kartu santri</p></div><span></span></div>
+    <div class="card">
+      <div id="qr-reader-login"></div>
+      <p id="login-scan-error" style="color:var(--merah); font-size:12px; margin-top:8px;"></p>
+    </div>
+  </div>
+
+  <!-- ===== PORTAL WALI ===== -->
+  <div id="view-wali" class="app-shell hidden">
+    <div class="header"><div><p class="label">Portal wali</p><p class="title">Ma'had Sabilul Muttaqin</p></div>
+      <i class="ti ti-logout back-btn" onclick="logout()"></i></div>
+
+    <div class="card" style="margin-top:-24px; display:flex; align-items:center; gap:12px;">
+      <div style="width:44px;height:44px;border-radius:10px;background:var(--abu-muda);display:flex;align-items:center;justify-content:center;">
+        <i class="ti ti-school" style="font-size:22px;"></i>
+      </div>
+      <div style="flex:1;">
+        <p id="wali-santri-nama" style="font-weight:500; margin:0;">-</p>
+        <p id="wali-santri-info" style="font-size:12px; color:var(--abu-teks); margin:2px 0 0;">-</p>
+      </div>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-card" id="wali-saldo-card"><p class="label">Saldo tabungan</p><p class="value" id="wali-saldo">Rp 0</p></div>
+      <div class="stat-card" id="wali-absensi-card"><p class="label">Absensi terbaru</p><p class="value" id="wali-absensi-ringkas">-</p></div>
+    </div>
+
+    <div class="card" id="wali-hafalan-card">
+      <p style="font-size:13px; font-weight:500; margin:0 0 8px;">Hafalan terakhir</p>
+      <div id="wali-hafalan-list" style="font-size:13px; color:var(--abu-teks);">Belum ada data.</div>
+    </div>
+
+    <div class="card">
+      <p style="font-size:13px; font-weight:500; margin:0 0 8px;">Aktivitas terbaru</p>
+      <div id="wali-aktivitas"></div>
+    </div>
+
+    <div class="card" id="wali-pelanggaran-card">
+      <p style="font-size:13px; font-weight:500; margin:0 0 8px;">Catatan pelanggaran</p>
+      <div id="wali-pelanggaran-list" style="font-size:13px; color:var(--abu-teks);">Tidak ada catatan.</div>
+    </div>
+
+    <div style="padding:0 16px; display:flex; gap:8px; margin-top:12px;">
+      <button class="btn outline" style="flex:1;" onclick="showView('view-kartu-santri'); muatKartuSantri();">Lihat kartu santri</button>
+      <button class="btn primary" style="flex:1;" onclick="ajukanIzinPrompt()">Ajukan izin</button>
+    </div>
+
+    <div class="bottom-nav">
+      <i class="ti ti-home active" onclick="showView('view-wali')"></i>
+      <i class="ti ti-calendar-check" onclick="document.getElementById('wali-absensi-card').scrollIntoView({behavior:'smooth'})"></i>
+      <i class="ti ti-wallet" onclick="document.getElementById('wali-saldo-card').scrollIntoView({behavior:'smooth'})"></i>
+      <i class="ti ti-book-2" onclick="document.getElementById('wali-hafalan-card').scrollIntoView({behavior:'smooth'})"></i>
+      <i class="ti ti-user" onclick="showView('view-kartu-santri'); muatKartuSantri();"></i>
+    </div>
+  </div>
+
+  <!-- ===== ADMIN: FORM BIODATA SANTRI ===== -->
+  <div id="view-santri-form" class="app-shell hidden">
+    <div class="header"><i class="ti ti-arrow-left back-btn" onclick="showView('view-admin-santri')"></i>
+      <div><p class="label">Admin</p><p class="title" id="santri-form-title">Tambah santri</p></div><span></span></div>
+
+    <div class="card" style="text-align:center;">
+      <div id="santri-form-foto-preview" style="width:88px; height:88px; border-radius:12px; background:var(--abu-muda); margin:0 auto 10px; display:flex; align-items:center; justify-content:center; overflow:hidden;">
+        <i class="ti ti-user" style="font-size:36px;"></i>
+      </div>
+      <label class="btn outline" style="display:inline-flex; align-items:center; gap:6px; cursor:pointer;">
+        <i class="ti ti-camera"></i> Pilih/ambil foto
+        <input type="file" accept="image/*" capture="environment" id="santri-foto-input" style="display:none;" onchange="previewFotoSantri(event)" />
+      </label>
+    </div>
+
+    <div class="card">
+      <label style="font-size:13px;">Nama lengkap</label>
+      <div style="margin:6px 0 12px;"><input id="form-nama" placeholder="Nama santri" /></div>
+
+      <label style="font-size:13px;">NIS</label>
+      <div style="margin:6px 0 12px;"><input id="form-nis" placeholder="Nomor Induk Santri" /></div>
+
+      <div style="display:flex; gap:8px;">
+        <div style="flex:1;">
+          <label style="font-size:13px;">Kelas</label>
+          <div style="margin:6px 0 12px;"><input id="form-kelas" placeholder="Kelas" /></div>
+        </div>
+        <div style="flex:1;">
+          <label style="font-size:13px;">Level hafalan</label>
+          <div style="margin:6px 0 12px;">
+            <select id="form-level"><option value="Iqro">Iqro</option><option value="Alquran">Al-Qur'an</option></select>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:8px;">
+        <div style="flex:1;">
+          <label style="font-size:13px;">ID Asrama</label>
+          <div style="margin:6px 0 12px;"><input id="form-asrama" placeholder="Contoh: ASR-0001" /></div>
+        </div>
+        <div style="flex:1;">
+          <label style="font-size:13px;">Kamar</label>
+          <div style="margin:6px 0 12px;"><input id="form-kamar" placeholder="Nomor kamar" /></div>
+        </div>
+      </div>
+
+      <label style="font-size:13px;">Tempat, tanggal lahir</label>
+      <div style="display:flex; gap:8px; margin:6px 0 12px;">
+        <input id="form-tempat-lahir" placeholder="Tempat lahir" style="flex:1;" />
+        <input id="form-tanggal-lahir" type="date" style="flex:1;" />
+      </div>
+
+      <label style="font-size:13px;">Alamat</label>
+      <div style="margin:6px 0 12px;"><input id="form-alamat" placeholder="Alamat lengkap santri" /></div>
+
+      <button class="btn primary" style="width:100%; padding:10px;" onclick="simpanSantriForm()">Simpan</button>
+      <p id="santri-form-status" style="font-size:12px; margin-top:8px;"></p>
+    </div>
+  </div>
+
+  <!-- ===== KARTU SANTRI ===== -->
+  <div id="view-kartu-santri" class="app-shell hidden">
+    <div class="header"><i class="ti ti-arrow-left back-btn" onclick="showView(lastRoleHome())"></i>
+      <div><p class="label">Kartu identitas</p><p class="title">Kartu santri</p></div><span></span></div>
+
+    <div style="padding:16px;">
+      <div id="kartu-cetak-area" class="id-card">
+        <div class="id-header">
+          <i class="ti ti-star" style="font-size:16px; color:var(--emas);"></i>
+          <div><p class="nama-pondok">Ma'had Sabilul Muttaqin</p><p class="subtitle">Kartu tanda santri</p></div>
+        </div>
+        <div class="id-body">
+          <div class="id-foto" id="kartu-foto"><i class="ti ti-user"></i></div>
+          <div style="flex:1; min-width:0;">
+            <p id="kartu-nama" style="font-size:15px; font-weight:500; margin:0;">-</p>
+            <p id="kartu-nis" style="font-size:11px; color:var(--abu-teks); margin:2px 0 6px;">-</p>
+            <table style="font-size:10px; width:100%;">
+              <tr><td style="color:var(--abu-teks);">Kelas</td><td id="kartu-kelas">-</td></tr>
+              <tr><td style="color:var(--abu-teks);">Asrama</td><td id="kartu-asrama">-</td></tr>
+            </table>
+          </div>
+          <div class="id-qr"><img id="kartu-qr-img" src="" alt="QR santri" /></div>
+        </div>
+        <div class="id-footer"><p style="font-size:8px; color:var(--abu-teks); margin:0;">Untuk absensi, transaksi kantin, dan login wali</p></div>
+      </div>
+
+      <div style="display:flex; gap:8px; margin-top:14px;">
+        <button class="btn primary" style="flex:1;" onclick="downloadKartuPng()"><i class="ti ti-download"></i> Download PNG</button>
+        <button class="btn outline" style="flex:1;" onclick="window.print()"><i class="ti ti-printer"></i> Cetak PDF</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SCANNER QR (absensi / kantin) ===== -->
+  <div id="view-scan" class="app-shell hidden">
+    <div class="header"><i class="ti ti-arrow-left back-btn" onclick="stopScanner(); showView('view-admin-santri')"></i>
+      <div><p class="label">Petugas</p><p class="title">Scan QR santri</p></div><span></span></div>
+
+    <div class="card">
+      <div class="chip-row">
+        <span class="chip active" id="chip-mode-absensi" onclick="setScanMode('absensi')">Absensi</span>
+        <span class="chip" id="chip-mode-kantin" onclick="setScanMode('kantin')">Kantin</span>
+      </div>
+    </div>
+
+    <div id="scan-opsi-absensi" class="card">
+      <p style="font-size:13px; font-weight:500; margin:0 0 8px;">Sesi kegiatan</p>
+      <select id="scan-sesi"></select>
+    </div>
+
+    <div id="scan-opsi-kantin" class="card hidden">
+      <p style="font-size:13px; font-weight:500; margin:0 0 8px;">Nominal jajan (Rp)</p>
+      <input id="scan-nominal" type="number" placeholder="5000" />
+    </div>
+
+    <div class="card">
+      <div id="qr-reader"></div>
+      <button class="btn primary" style="width:100%; margin-top:10px;" onclick="startScanner()">Mulai scan kamera</button>
+      <p style="font-size:11px; color:var(--abu-teks); margin-top:8px;">Kamera tidak bisa dipakai? Masukkan ID santri manual:</p>
+      <div style="display:flex; gap:8px;">
+        <input id="scan-manual-id" placeholder="Contoh: STR-0001" />
+        <button class="btn outline" onclick="prosesSantriId(document.getElementById('scan-manual-id').value, 'Manual')">Proses</button>
+      </div>
+    </div>
+
+    <div id="scan-hasil" class="card hidden"></div>
+  </div>
+
+  <!-- ===== ADMIN: DATA SANTRI ===== -->
+  <div id="view-admin-santri" class="app-shell hidden">
+    <div class="header"><div><p class="label">Admin</p><p class="title">Data santri</p></div>
+      <i class="ti ti-logout back-btn" onclick="logout()"></i></div>
+    <div style="padding:16px 16px 0; display:flex; gap:8px;">
+      <input id="admin-cari-santri" placeholder="Cari nama santri" oninput="renderAdminSantriList()" />
+      <button class="btn primary" onclick="bukaFormTambahSantri()"><i class="ti ti-plus"></i></button>
+    </div>
+    <div id="admin-santri-list"></div>
+    <div style="height:8px;"></div>
+    <div class="bottom-nav">
+      <i class="ti ti-users active"></i>
+      <i class="ti ti-qrcode" onclick="showView('view-scan'); muatSesiUntukScan();"></i>
+      <i class="ti ti-report" onclick="showView('view-admin-rekap')"></i>
+      <i class="ti ti-calendar-check" onclick="showView('view-admin-perizinan'); muatPerizinan();"></i>
+      <i class="ti ti-settings" onclick="showView('view-admin-pengaturan')"></i>
+    </div>
+  </div>
+
+  <!-- ===== ADMIN: FORM SANTRI (tambah/edit + upload foto) ===== -->
+  <div id="view-admin-santri-form" class="app-shell hidden">
+    <div class="header"><i class="ti ti-arrow-left back-btn" onclick="showView('view-admin-santri')"></i>
+      <div><p class="label">Admin</p><p class="title" id="form-santri-title">Tambah santri</p></div><span></span></div>
+    <div class="card">
+      <label style="font-size:13px;">Foto santri</label>
+      <div style="display:flex; align-items:center; gap:12px; margin:8px 0 16px;">
+        <div id="form-foto-preview" style="width:56px; height:68px; border-radius:8px; background:var(--abu-muda); display:flex; align-items:center; justify-content:center; overflow:hidden; flex-shrink:0;">
+          <i class="ti ti-user" style="font-size:26px;"></i>
+        </div>
+        <input type="file" id="form-foto-input" accept="image/*" onchange="prosesFileFoto(event)" style="height:auto; border:none; padding:0;" />
+      </div>
+
+      <label style="font-size:13px;">Nama</label>
+      <div style="margin:6px 0 12px;"><input id="form-nama" placeholder="Nama santri" /></div>
+
+      <label style="font-size:13px;">Kelas</label>
+      <div style="margin:6px 0 12px;"><input id="form-kelas" placeholder="Kelas" /></div>
+
+      <label style="font-size:13px;">Level hafalan</label>
+      <div style="margin:6px 0 12px;">
+        <select id="form-level"><option value="Iqro">Iqro</option><option value="Alquran">Al-Qur'an</option></select>
+      </div>
+
+      <label style="font-size:13px;">Kamar</label>
+      <div style="margin:6px 0 16px;"><input id="form-kamar" placeholder="Kamar" /></div>
+
+      <button class="btn primary" style="width:100%; padding:10px;" onclick="simpanFormSantri()">Simpan</button>
+      <p id="form-santri-status" style="font-size:12px; margin-top:8px;"></p>
+    </div>
+  </div>
+
+  <!-- ===== ADMIN: REKAP ===== -->
+  <div id="view-admin-rekap" class="app-shell hidden">
+    <div class="header"><div><p class="label">Admin</p><p class="title">Rekap & export</p></div>
+      <i class="ti ti-logout back-btn" onclick="logout()"></i></div>
+
+    <div class="card">
+      <p style="font-size:13px; font-weight:500; margin:0 0 8px;">Kategori</p>
+      <div class="chip-row" id="rekap-kategori-chips">
+        <span class="chip active" data-val="semua">Semua</span>
+        <span class="chip" data-val="hafalan">Hafalan</span>
+        <span class="chip" data-val="absensi">Absensi</span>
+        <span class="chip" data-val="kantin">Kantin</span>
+        <span class="chip" data-val="pelanggaran">Pelanggaran</span>
+      </div>
+    </div>
+    <div class="card">
+      <p style="font-size:13px; font-weight:500; margin:0 0 8px;">Santri</p>
+      <select id="rekap-santri"><option value="">Semua santri</option></select>
+    </div>
+    <div class="card">
+      <p style="font-size:13px; font-weight:500; margin:0 0 8px;">Periode</p>
+      <div style="display:flex; gap:8px;">
+        <input type="date" id="rekap-dari" /><input type="date" id="rekap-sampai" />
+      </div>
+    </div>
+    <div style="padding:16px; display:flex; gap:8px;">
+      <button class="btn outline" style="flex:1;" onclick="muatRekap()">Tampilkan</button>
+    </div>
+    <div id="rekap-hasil" class="card hidden"></div>
+    <div style="padding:0 16px; display:flex; gap:8px; margin-top:12px;">
+      <button class="btn primary" style="flex:1;" onclick="exportRekap('pdf')"><i class="ti ti-file-type-pdf"></i> Export PDF</button>
+      <button class="btn outline" style="flex:1;" onclick="exportRekap('excel')"><i class="ti ti-file-spreadsheet"></i> Export Excel</button>
+    </div>
+
+    <div class="bottom-nav">
+      <i class="ti ti-users" onclick="showView('view-admin-santri')"></i>
+      <i class="ti ti-qrcode" onclick="showView('view-scan'); muatSesiUntukScan();"></i>
+      <i class="ti ti-report active"></i>
+      <i class="ti ti-calendar-check" onclick="showView('view-admin-perizinan'); muatPerizinan();"></i>
+      <i class="ti ti-settings" onclick="showView('view-admin-pengaturan')"></i>
+    </div>
+  </div>
+
+  <!-- ===== ADMIN: PERIZINAN ===== -->
+  <div id="view-admin-perizinan" class="app-shell hidden">
+    <div class="header"><div><p class="label">Admin</p><p class="title">Perizinan santri</p></div>
+      <i class="ti ti-logout back-btn" onclick="logout()"></i></div>
+    <div id="perizinan-list"></div>
+    <div class="bottom-nav">
+      <i class="ti ti-users" onclick="showView('view-admin-santri')"></i>
+      <i class="ti ti-qrcode" onclick="showView('view-scan'); muatSesiUntukScan();"></i>
+      <i class="ti ti-report" onclick="showView('view-admin-rekap')"></i>
+      <i class="ti ti-calendar-check active"></i>
+      <i class="ti ti-settings" onclick="showView('view-admin-pengaturan')"></i>
+    </div>
+  </div>
+
+  <!-- ===== ADMIN: PENGATURAN (menu) ===== -->
+  <div id="view-admin-pengaturan" class="app-shell hidden">
+    <div class="header"><div><p class="label">Admin</p><p class="title">Pengaturan</p></div>
+      <i class="ti ti-logout back-btn" onclick="logout()"></i></div>
+    <div class="settings-item" onclick="showView('view-admin-sesi'); muatSesiList();">
+      <i class="ti ti-clock icon-box"></i><div><p style="margin:0; font-weight:500; font-size:13px;">Sesi kegiatan</p><p style="margin:0; font-size:11px; color:var(--abu-teks);">Kelola daftar sesi absensi</p></div>
+    </div>
+    <div class="settings-item" onclick="showView('view-admin-asrama'); muatAsramaList();">
+      <i class="ti ti-building icon-box"></i><div><p style="margin:0; font-weight:500; font-size:13px;">Asrama</p><p style="margin:0; font-size:11px; color:var(--abu-teks);">Kelola daftar asrama & kamar</p></div>
+    </div>
+    <div class="settings-item" onclick="showView('view-admin-kontak-wa'); muatKontakWa();">
+      <i class="ti ti-brand-whatsapp icon-box"></i><div><p style="margin:0; font-weight:500; font-size:13px;">Kontak WA</p><p style="margin:0; font-size:11px; color:var(--abu-teks);">Nomor WA admin, bendahara pondok & bendahara santri</p></div>
+    </div>
+    <div class="bottom-nav">
+      <i class="ti ti-users" onclick="showView('view-admin-santri')"></i>
+      <i class="ti ti-qrcode" onclick="showView('view-scan'); muatSesiUntukScan();"></i>
+      <i class="ti ti-report" onclick="showView('view-admin-rekap')"></i>
+      <i class="ti ti-calendar-check" onclick="showView('view-admin-perizinan'); muatPerizinan();"></i>
+      <i class="ti ti-settings active"></i>
+    </div>
+  </div>
+
+  <!-- ===== ADMIN: SESI KEGIATAN ===== -->
+  <div id="view-admin-sesi" class="app-shell hidden">
+    <div class="header"><i class="ti ti-arrow-left back-btn" onclick="showView('view-admin-pengaturan')"></i>
+      <div><p class="label">Pengaturan</p><p class="title">Sesi kegiatan</p></div><span></span></div>
+    <div style="padding:16px 16px 0;"><button class="btn primary" style="width:100%;" onclick="tambahSesiPrompt()"><i class="ti ti-plus"></i> Tambah sesi</button></div>
+    <div id="sesi-list"></div>
+  </div>
+
+  <!-- ===== ADMIN: ASRAMA ===== -->
+  <div id="view-admin-asrama" class="app-shell hidden">
+    <div class="header"><i class="ti ti-arrow-left back-btn" onclick="showView('view-admin-pengaturan')"></i>
+      <div><p class="label">Pengaturan</p><p class="title">Asrama</p></div><span></span></div>
+    <div style="padding:16px 16px 0;"><button class="btn primary" style="width:100%;" onclick="tambahAsramaPrompt()"><i class="ti ti-plus"></i> Tambah asrama</button></div>
+    <div id="asrama-list"></div>
+  </div>
+
+  <!-- ===== ADMIN: KONTAK WA ===== -->
+  <div id="view-admin-kontak-wa" class="app-shell hidden">
+    <div class="header"><i class="ti ti-arrow-left back-btn" onclick="showView('view-admin-pengaturan')"></i>
+      <div><p class="label">Pengaturan</p><p class="title">Kontak WA</p></div><span></span></div>
+    <div class="card">
+      <label style="font-size:13px;">WA admin pondok</label>
+      <p style="font-size:11px; color:var(--abu-teks); margin:2px 0 6px;">Dipakai untuk fitur "Lupa sandi" di halaman login</p>
+      <div style="margin:0 0 14px;"><input id="wa-admin-pondok" placeholder="08xxxxxxxxxx" /></div>
+
+      <label style="font-size:13px;">WA bendahara pondok</label>
+      <p style="font-size:11px; color:var(--abu-teks); margin:2px 0 6px;">Dipakai untuk notifikasi SPP belum lunas</p>
+      <div style="margin:0 0 14px;"><input id="wa-bendahara-pondok" placeholder="08xxxxxxxxxx" /></div>
+
+      <label style="font-size:13px;">WA bendahara santri</label>
+      <p style="font-size:11px; color:var(--abu-teks); margin:2px 0 6px;">Dipakai untuk notifikasi saldo tabungan habis</p>
+      <div style="margin:0 0 14px;"><input id="wa-bendahara-santri" placeholder="08xxxxxxxxxx" /></div>
+
+      <button class="btn primary" style="width:100%; padding:10px;" onclick="simpanKontakWa()">Simpan</button>
+      <p id="kontak-wa-status" style="font-size:12px; margin-top:8px;"></p>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
